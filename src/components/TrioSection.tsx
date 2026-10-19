@@ -1,6 +1,8 @@
 'use client';
 
-import { MEMBERS } from '@/data/portfolio';
+import { useState, useEffect } from 'react';
+import { MEMBERS as fallbackMembers, Member } from '@/data/portfolio';
+import { client, urlFor } from '@/sanity/client';
 import { MessageSquare, ArrowUpRight, Compass, Camera, Code } from 'lucide-react';
 
 interface TrioProps {
@@ -8,6 +10,52 @@ interface TrioProps {
 }
 
 export default function TrioSection({ onSelectLeadFor }: TrioProps) {
+  const [members, setMembers] = useState<Member[]>(fallbackMembers);
+
+  useEffect(() => {
+    async function loadMembersFromSanity() {
+      try {
+        const query = `*[_type == "member"]{
+          id,
+          name,
+          role,
+          discipline,
+          headline,
+          bio,
+          skills,
+          whatsapp,
+          avatar
+        }`;
+        const data = await client.fetch(query);
+        if (data && data.length > 0) {
+          // Merge with fallback to keep colors
+          const merged = fallbackMembers.map((fallback) => {
+            const found = data.find((d: any) => d.id === fallback.id);
+            if (found) {
+              return {
+                ...fallback,
+                name: found.name || fallback.name,
+                role: found.role || fallback.role,
+                discipline: found.discipline || fallback.discipline,
+                headline: found.headline || fallback.headline,
+                bio: found.bio || fallback.bio,
+                skills: found.skills && found.skills.length > 0 ? found.skills : fallback.skills,
+                whatsapp: found.whatsapp || fallback.whatsapp,
+                avatar: found.avatar ? urlFor(found.avatar).width(800).url() : fallback.avatar,
+              };
+            }
+            return fallback;
+          });
+          setMembers(merged);
+        }
+      } catch (err) {
+        console.warn('Member fetch fallback:', err);
+      }
+    }
+
+    loadMembersFromSanity();
+  }, []);
+
   const getIcon = (id: string) => {
     switch (id) {
       case 'bayu':
@@ -39,7 +87,7 @@ export default function TrioSection({ onSelectLeadFor }: TrioProps) {
 
         {/* Members Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {MEMBERS.map((member) => (
+          {members.map((member) => (
             <div
               key={member.id}
               className="group bg-white rounded-3xl p-8 border border-black/[0.06] shadow-sm hover:shadow-lg transition-all flex flex-col justify-between"

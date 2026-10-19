@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import TrioSection from '@/components/TrioSection';
 import WorksSection from '@/components/WorksSection';
+import FAQSection from '@/components/FAQSection';
 import LeadSection from '@/components/LeadSection';
 import Footer from '@/components/Footer';
 
@@ -28,6 +29,7 @@ export default function Home() {
           <Hero />
           <TrioSection onSelectLeadFor={handleSelectLeadFor} />
           <WorksSection onSelectLeadFor={handleSelectLeadFor} />
+          <FAQSection />
           <LeadSection
             selectedTarget={selectedLeadTarget}
             setSelectedTarget={setSelectedLeadTarget}
