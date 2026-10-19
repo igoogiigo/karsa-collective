@@ -1,16 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, CheckCircle2, MessageCircle, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { MEMBERS } from '@/data/portfolio';
+import { MEMBERS as fallbackMembers, Member } from '@/data/portfolio';
+import { client, urlFor } from '@/sanity/client';
 
 interface LeadProps {
   selectedTarget: 'all' | 'bayu' | 'fadil' | 'igo';
   setSelectedTarget: (target: 'all' | 'bayu' | 'fadil' | 'igo') => void;
+  members?: Member[];
 }
 
-export default function LeadSection({ selectedTarget, setSelectedTarget }: LeadProps) {
+export default function LeadSection({ selectedTarget, setSelectedTarget, members: propMembers }: LeadProps) {
+  const [members, setMembers] = useState<Member[]>(propMembers || fallbackMembers);
   const [formData, setFormData] = useState({
     name: '',
     contact: '',
@@ -22,7 +25,56 @@ export default function LeadSection({ selectedTarget, setSelectedTarget }: LeadP
   const [responseMsg, setResponseMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const targetMember = MEMBERS.find((m) => m.id === selectedTarget);
+  // Fetch data members dari Sanity biar sinkron sama Studio
+  useEffect(() => {
+    if (propMembers && propMembers.length > 0) {
+      setMembers(propMembers);
+      return;
+    }
+
+    async function loadMembersFromSanity() {
+      try {
+        const query = `*[_type == "member"]{
+          id,
+          name,
+          role,
+          discipline,
+          headline,
+          bio,
+          skills,
+          whatsapp,
+          avatar
+        }`;
+        const data = await client.fetch(query);
+        if (data && data.length > 0) {
+          const merged = fallbackMembers.map((fallback) => {
+            const found = data.find((d: any) => d.id === fallback.id);
+            if (found) {
+              return {
+                ...fallback,
+                name: found.name || fallback.name,
+                role: found.role || fallback.role,
+                discipline: found.discipline || fallback.discipline,
+                headline: found.headline || fallback.headline,
+                bio: found.bio || fallback.bio,
+                skills: found.skills && found.skills.length > 0 ? found.skills : fallback.skills,
+                whatsapp: found.whatsapp || fallback.whatsapp,
+                avatar: found.avatar ? urlFor(found.avatar).width(800).url() : fallback.avatar,
+              };
+            }
+            return fallback;
+          });
+          setMembers(merged);
+        }
+      } catch (err) {
+        console.warn('LeadSection Sanity fallback:', err);
+      }
+    }
+
+    loadMembersFromSanity();
+  }, [propMembers]);
+
+  const targetMember = members.find((m) => m.id === selectedTarget);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +127,7 @@ export default function LeadSection({ selectedTarget, setSelectedTarget }: LeadP
           {/* Left Column: Direct WA Shortcuts & Explanation */}
           <div className="lg:col-span-5">
             <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 font-medium block mb-3">
-              [ 03 / Start a Project ]
+              [ 04 / Start a Project ]
             </span>
             <h2 className="text-3xl sm:text-5xl font-light tracking-tight text-white leading-tight mb-6">
               Punya ide yang ingin <span className="font-serif italic font-normal text-neutral-300">diwujudkan</span>?
@@ -91,7 +143,7 @@ export default function LeadSection({ selectedTarget, setSelectedTarget }: LeadP
                 Atau langsung WhatsApp ke spesialis:
               </span>
 
-              {MEMBERS.map((m) => (
+              {members.map((m) => (
                 <a
                   key={m.id}
                   href={`https://wa.me/${m.whatsapp}?text=Halo%20${encodeURIComponent(
