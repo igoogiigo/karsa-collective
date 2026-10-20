@@ -1,64 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { PROJECTS as fallbackProjects, Project, MEMBERS } from '@/data/portfolio';
-import { client, urlFor } from '@/sanity/client';
+import { useState } from 'react';
+import { Project, MEMBERS } from '@/data/portfolio';
 import { ArrowUpRight, ExternalLink } from 'lucide-react';
 
 interface WorksProps {
   onSelectLeadFor: (memberId: 'bayu' | 'fadil' | 'igo') => void;
+  initialProjects: Project[];
 }
 
-export default function WorksSection({ onSelectLeadFor }: WorksProps) {
-  const [projects, setProjects] = useState<Project[]>(fallbackProjects);
+export default function WorksSection({ onSelectLeadFor, initialProjects }: WorksProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'visual' | 'spatial' | 'web'>('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // Fetch data dari Sanity. Kalau kosong, pakai fallback data
-  useEffect(() => {
-    async function fetchSanityProjects() {
-      try {
-        const query = `*[_type == "project"] | order(_createdAt desc){
-          _id,
-          title,
-          leadMemberId,
-          category,
-          disciplineLabel,
-          client,
-          year,
-          metrics,
-          summary,
-          deliverables,
-          link,
-          thumbnail
-        }`;
-        const data = await client.fetch(query);
-        if (data && data.length > 0) {
-          const mapped: Project[] = data.map((item: any) => ({
-            id: item._id,
-            title: item.title,
-            category: item.category,
-            disciplineLabel: item.disciplineLabel,
-            leadMemberId: item.leadMemberId,
-            client: item.client || '-',
-            year: item.year || '2026',
-            summary: item.summary,
-            deliverables: item.deliverables || [],
-            thumbnail: item.thumbnail ? urlFor(item.thumbnail).width(1200).url() : fallbackProjects[0].thumbnail,
-            metrics: item.metrics,
-            link: item.link,
-          }));
-          setProjects(mapped);
-        }
-      } catch (err) {
-        console.warn('Sanity fetch fallback:', err);
-      }
-    }
-
-    fetchSanityProjects();
-  }, []);
-
-  const filteredProjects = projects.filter((item) => {
+  const filteredProjects = initialProjects.filter((item) => {
     if (activeFilter === 'all') return true;
     return item.category === activeFilter;
   });

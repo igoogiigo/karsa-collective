@@ -1,58 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { client } from '@/sanity/client';
 
-interface FAQItem {
+export interface FAQItem {
   _id: string;
   question: string;
   answer: string;
 }
 
-const fallbackFAQs: FAQItem[] = [
-  {
-    _id: 'faq-1',
-    question: 'Apakah kami bisa merekrut hanya satu spesialis saja (misal hanya Bayu / Fadil / Igo)?',
-    answer:
-      'Tentu saja bisa! Kami bekerja secara modular. Anda bebas bekerja sama hanya dengan Bayu untuk urusan branding & visual, dengan Fadil untuk arsitektur/interior, atau dengan Igo untuk pembuatan website.',
-  },
-  {
-    _id: 'faq-2',
-    question: 'Bagaimana jika kami butuh ketiganya sekaligus untuk satu proyek terpadu?',
-    answer:
-      'Ini adalah kekuatan utama Karsa Collective. Kami akan berkolaborasi sebagai satu studio utuh: dari desain bangunan fisik, identitas visual & kampanye foto/video, hingga sistem web terintegrasi tanpa Anda perlu mencari agensi terpisah.',
-  },
-  {
-    _id: 'faq-3',
-    question: 'Berapa lama estimasi pengerjaan dan bagaimana sistem pembayarannya?',
-    answer:
-      'Timeline dan skema disesuaikan dengan scope proyek setelah brief awal didiskusikan. Kami menyediakan konsultasi awal gratis untuk menentukan roadmap, deliverables, serta tahapan termin pembayaran.',
-  },
-];
+interface FAQProps {
+  initialFaqs: FAQItem[];
+}
 
-export default function FAQSection() {
-  const [faqs, setFaqs] = useState<FAQItem[]>(fallbackFAQs);
+export default function FAQSection({ initialFaqs }: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-
-  useEffect(() => {
-    async function loadFaqs() {
-      try {
-        const query = `*[_type == "faq"] | order(order asc, _createdAt asc){
-          _id,
-          question,
-          answer
-        }`;
-        const data = await client.fetch(query);
-        if (data && data.length > 0) {
-          setFaqs(data);
-        }
-      } catch (err) {
-        console.warn('FAQ fallback:', err);
-      }
-    }
-    loadFaqs();
-  }, []);
+  const faqs = initialFaqs;
 
   return (
     <section id="faq" className="py-24 border-b border-black/[0.06] bg-[#fbfbfa]">
